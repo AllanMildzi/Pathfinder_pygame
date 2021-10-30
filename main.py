@@ -40,16 +40,16 @@ class Button():
     def __init__(self, x, text):
         self.x = x
         self.text = text
-        self.buttonRect = pygame.Rect(self.x, HEIGTH - 200, WIDTH / 5, 50)
+        self.buttons_rect = pygame.Rect(self.x, HEIGTH - 200, WIDTH / 3, 50)
         self.isPressed = False
 
     def draw(self, win):
-        pygame.draw.rect(win, BLACK, self.buttonRect, 1)
-        pygame.draw.rect(win, CERISE, (self.x + 1, HEIGTH - 199, WIDTH / 5 - 2, 48))
+        pygame.draw.rect(win, BLACK, self.buttons_rect, 1)
+        pygame.draw.rect(win, CERISE, (self.x + 1, HEIGTH - 199, WIDTH / 3 - 2, 48))
         if self.isPressed == True:
-            pygame.draw.rect(win, GREEN, (self.x + 1, HEIGTH - 199, WIDTH / 5 - 2, 48))
+            pygame.draw.rect(win, GREEN, (self.x + 1, HEIGTH - 199, WIDTH / 3 - 2, 48))
         text = font.render(self.text, 1, (0, 0, 0))
-        win.blit(text, (self.x + WIDTH / 10 - (text.get_width() / 2), HEIGTH - 190))
+        win.blit(text, (self.x + WIDTH / 6 - (text.get_width() / 2), HEIGTH - 190))
 
 
 
@@ -206,11 +206,7 @@ def main():
     run = True
 
     board = Board()
-    buttonsList = [Button(0, "Walls"),
-                   Button(WIDTH / 5, "Erase"),
-                   Button(WIDTH / 5 * 2, "Clear"),
-                   Button(WIDTH / 5 * 3, "Random"),
-                   Button(WIDTH / 5 * 4, "Generate")]
+    buttons_list = [Button(0, "Clear"), Button(WIDTH / 3, "Random"), Button(WIDTH / 3 * 2, "Generate")]
     
     algo_boxes = [CheckBox(20, HEIGTH - 140, "A*"), 
                   CheckBox(20, HEIGTH - 105, "Dijkstra"),
@@ -228,7 +224,10 @@ def main():
     start = Node(None, (1, 1))
     end = Node(None, (board.rows - 2, board.columns - 2))
     path = None
-    can_move = False
+    can_move_start = False
+    can_move_end = False
+    can_place_walls = False
+    can_remove_walls = False
 
     while run:
         clock.tick(FPS)
@@ -247,10 +246,10 @@ def main():
                     board.columns += 1
                     end.position = (board.rows - 2, board.columns - 2)
                     board.update(board.rows, board.columns)
-            for button in buttonsList:
-                if event.type == pygame.MOUSEBUTTONDOWN and button.buttonRect.collidepoint(pygame.mouse.get_pos()):
+            for button in buttons_list:
+                if event.type == pygame.MOUSEBUTTONDOWN and button.buttons_rect.collidepoint(pygame.mouse.get_pos()):
                     if button.isPressed == False:
-                        for otherButtons in buttonsList:
+                        for otherButtons in buttons_list:
                             otherButtons.isPressed = False
                         button.isPressed = True
                     else:
@@ -281,7 +280,7 @@ def main():
         board.draw_board(win)
         start.draw(TEAL, start.get_node_rect(board.width))
         end.draw(ORANGE, end.get_node_rect(board.width))
-        for button in buttonsList:
+        for button in buttons_list:
             button.draw(win)
         for algo_box in algo_boxes:
             algo_box.draw()
@@ -296,53 +295,60 @@ def main():
                 if heuristic_box.is_checked:
                     heuristic = heuristic_box.text
         pygame.display.update()
-
         
         mouse_inputs = pygame.mouse.get_pressed()
 
         for row in range(board.rows):
             for col in range(board.columns):
                 rect = pygame.Rect(col * board.width +1, row * board.width +1, math.ceil(board.width -1), math.ceil(board.width -1))
-                if (mouse_inputs[0] and (start.get_node_rect(board.width).collidepoint(pygame.mouse.get_pos()) or
-                end.get_node_rect(board.width).collidepoint(pygame.mouse.get_pos()))):
-                    can_move = True
-                elif not mouse_inputs[0]:
-                    can_move = False
-
-                if can_move and rect.collidepoint(pygame.mouse.get_pos()):
-                    start.position = (pygame.mouse.get_pos()[1] // int(board.width), pygame.mouse.get_pos()[0] // int(board.width))
-                    end.position = (pygame.mouse.get_pos()[1] // int(board.width), pygame.mouse.get_pos()[0] // int(board.width))
-                if mouse_inputs[0] and rect.collidepoint(pygame.mouse.get_pos()):
-                    if board.graph[row][col] == "empty" and buttonsList[0].isPressed:
-                        board.place_walls(row, col)
-                    if board.graph[row][col] == "wall" and buttonsList[1].isPressed:
+                if mouse_inputs[0]:
+                    if start.get_node_rect(board.width).collidepoint(pygame.mouse.get_pos()) and can_place_walls == False and can_remove_walls == False:
+                        can_move_start = True
+                    if end.get_node_rect(board.width).collidepoint(pygame.mouse.get_pos()) and can_place_walls == False and can_remove_walls == False:
+                        can_move_end = True
+                    if rect.collidepoint(pygame.mouse.get_pos()) and board.graph[row][col] == "empty" and can_remove_walls == False:
+                        can_place_walls = True
+                    if rect.collidepoint(pygame.mouse.get_pos()) and board.graph[row][col] == "wall" and can_place_walls == False:
+                        can_remove_walls = True
+                    if buttons_list[0].buttons_rect.collidepoint(pygame.mouse.get_pos()):
                         board.clear_walls(row, col)
+                        buttons_list[0].isPressed = False
+                    if buttons_list[1].buttons_rect.collidepoint(pygame.mouse.get_pos()):
+                        board.clear_walls(row, col)
+                        buttons_list[1].isPressed = False
+                    if buttons_list[2].buttons_rect.collidepoint(pygame.mouse.get_pos()):
+                        if algorithm == "A*":
+                            path = a_star(board.graph, 
+                                                board.width, 
+                                                start, 
+                                                end,
+                                                heuristic, 
+                                                option_boxes[0].is_checked, 
+                                                option_boxes[1].is_checked)
+                        
+                        elif algorithm == "Dijkstra":
+                            print("Test")
+                        buttons_list[2].isPressed = False
+                        break
+                else:
+                    can_move_start = False
+                    can_move_end = False
+                    can_place_walls = False
+                    can_remove_walls = False
 
-                if mouse_inputs[0] and buttonsList[2].buttonRect.collidepoint(pygame.mouse.get_pos()):
+                if can_move_start and rect.collidepoint(pygame.mouse.get_pos()) and board.graph[row][col] == "empty":
+                    start.position = (pygame.mouse.get_pos()[1] // int(board.width), pygame.mouse.get_pos()[0] // int(board.width))
+                elif can_move_end and rect.collidepoint(pygame.mouse.get_pos()) and board.graph[row][col] == "empty":
+                    end.position = (pygame.mouse.get_pos()[1] // int(board.width), pygame.mouse.get_pos()[0] // int(board.width))
+                elif can_place_walls and rect.collidepoint(pygame.mouse.get_pos()):
+                    board.place_walls(row, col)
+                elif can_remove_walls and rect.collidepoint(pygame.mouse.get_pos()):
                     board.clear_walls(row, col)
-                    buttonsList[2].isPressed = False
-                if mouse_inputs[0] and buttonsList[3].buttonRect.collidepoint(pygame.mouse.get_pos()):
-                    board.clear_walls(row, col)
-                    buttonsList[3].isPressed = False
-                if mouse_inputs[0] and buttonsList[4].buttonRect.collidepoint(pygame.mouse.get_pos()):
-                    if algorithm == "A*":
-                        path = a_star(board.graph, 
-                                            board.width, 
-                                            start, 
-                                            end,
-                                            heuristic, 
-                                            option_boxes[0].is_checked, 
-                                            option_boxes[1].is_checked)
-                    
-                    elif algorithm == "Dijkstra":
-                        print("Test")
-                    buttonsList[4].isPressed = False
-                    break
 
             if path != None:
                 run = False
                 draw_path(BLUE, path, board.width)
-                freeze(1000)
+                freeze(10000)
                 break
 
     pygame.quit()
