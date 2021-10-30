@@ -48,6 +48,8 @@ class Button():
         pygame.draw.rect(win, CERISE, (self.x + 1, HEIGTH - 199, WIDTH / 5 - 2, 48))
         if self.isPressed == True:
             pygame.draw.rect(win, GREEN, (self.x + 1, HEIGTH - 199, WIDTH / 5 - 2, 48))
+        text = font.render(self.text, 1, (0, 0, 0))
+        win.blit(text, (self.x + WIDTH / 10 - (text.get_width() / 2), HEIGTH - 190))
 
 
 
@@ -226,6 +228,7 @@ def main():
     start = Node(None, (1, 1))
     end = Node(None, (board.rows - 2, board.columns - 2))
     path = None
+    can_move = False
 
     while run:
         clock.tick(FPS)
@@ -295,24 +298,33 @@ def main():
         pygame.display.update()
 
         
-        mouseInput = pygame.mouse.get_pressed()
+        mouse_inputs = pygame.mouse.get_pressed()
 
         for row in range(board.rows):
             for col in range(board.columns):
                 rect = pygame.Rect(col * board.width +1, row * board.width +1, math.ceil(board.width -1), math.ceil(board.width -1))
-                if mouseInput[0] and rect.collidepoint(pygame.mouse.get_pos()):
+                if (mouse_inputs[0] and (start.get_node_rect(board.width).collidepoint(pygame.mouse.get_pos()) or
+                end.get_node_rect(board.width).collidepoint(pygame.mouse.get_pos()))):
+                    can_move = True
+                elif not mouse_inputs[0]:
+                    can_move = False
+
+                if can_move and rect.collidepoint(pygame.mouse.get_pos()):
+                    start.position = (pygame.mouse.get_pos()[1] // int(board.width), pygame.mouse.get_pos()[0] // int(board.width))
+                    end.position = (pygame.mouse.get_pos()[1] // int(board.width), pygame.mouse.get_pos()[0] // int(board.width))
+                if mouse_inputs[0] and rect.collidepoint(pygame.mouse.get_pos()):
                     if board.graph[row][col] == "empty" and buttonsList[0].isPressed:
                         board.place_walls(row, col)
                     if board.graph[row][col] == "wall" and buttonsList[1].isPressed:
                         board.clear_walls(row, col)
 
-                if mouseInput[0] and buttonsList[2].buttonRect.collidepoint(pygame.mouse.get_pos()):
+                if mouse_inputs[0] and buttonsList[2].buttonRect.collidepoint(pygame.mouse.get_pos()):
                     board.clear_walls(row, col)
                     buttonsList[2].isPressed = False
-                if mouseInput[0] and buttonsList[3].buttonRect.collidepoint(pygame.mouse.get_pos()):
+                if mouse_inputs[0] and buttonsList[3].buttonRect.collidepoint(pygame.mouse.get_pos()):
                     board.clear_walls(row, col)
                     buttonsList[3].isPressed = False
-                if mouseInput[0] and buttonsList[4].buttonRect.collidepoint(pygame.mouse.get_pos()):
+                if mouse_inputs[0] and buttonsList[4].buttonRect.collidepoint(pygame.mouse.get_pos()):
                     if algorithm == "A*":
                         path = a_star(board.graph, 
                                             board.width, 
