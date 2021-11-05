@@ -91,9 +91,9 @@ class Node():
 
 
 def draw_path(color, path, width):
-    for p in path:
-        node_rect = pygame.Rect(p[1] * width + 1, p[0] * width + 1, width - 1, width - 1)
-        pygame.draw.rect(win, color, node_rect)
+    for node in path:
+        node.draw(color, node.get_node_rect(width))
+        freeze(0.2)
 
 
 def freeze(ms):
@@ -118,7 +118,7 @@ def return_path(current_node):
     path = []
     current = current_node
     while current is not None:
-        path.append(current.position)
+        path.append(current)
         current = current.parent
     return path[1:-1]
 
@@ -148,6 +148,8 @@ def a_star(graph, node_width, start, end, distance, allow_diagonal, allow_bidire
                 current_node = node
                 current_index = index
 
+        node.draw(RED, current_node.get_node_rect(node_width))
+
         if current_iteration > max_iterations:
             return return_path(current_node)
 
@@ -176,9 +178,9 @@ def a_star(graph, node_width, start, end, distance, allow_diagonal, allow_bidire
                 continue
 
             new_node = Node(current_node, node_position)
-            new_node.draw(RED, new_node.get_node_rect(node_width))
+            new_node.draw(LIME, new_node.get_node_rect(node_width))
             pygame.display.update()
-            freeze(1)
+            freeze(0.1)
 
             children.append(new_node)
 
@@ -190,11 +192,6 @@ def a_star(graph, node_width, start, end, distance, allow_diagonal, allow_bidire
             for open_node in open_list:
                 if open_node == child and child.g >= open_node.g:
                     open_list.remove(child)
-                    continue
-
-            for closed_node in closed_list:
-                if closed_node == child:
-                    closed_list.remove(child)
                     continue
 
             open_list.append(child)
