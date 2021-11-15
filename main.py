@@ -24,20 +24,20 @@ class Board():
         self.graph[row][col] = "empty"
 
     def random_generation(self, start, end):
-        if start.position[0] == 0:
-            start.position = (start.position[0] + 1, start.position[1])
-        if start.position[1] == 0:
-            start.position = (start.position[0], start.position[1] + 1)
-        if start.position[0] == self.rows - 1:
-            start.position = (start.position[0] - 1, start.position[1])
-        if start.position == self.columns - 1:
-            start.position[1] = (start.position[0], start.position[1] - 1)
+        nodes = (start.position, end.position)
+        for position in nodes:
+            if position[0] == 0:
+                position = (position[0] + 1, position[1])
+            if position[1] == 0:
+                position = (position[0], position[1] + 1)
+            if position[0] == self.rows - 1:
+                position = (position[0] - 1, position[1])
+            if position == self.columns - 1:
+                position[1] = (position[0], position[1] - 1)
         
         for row in range(self.rows):
             for col in range(self.columns):
                 self.graph[row][col] = "wall"
-
-        self.graph[end.position[0]][end.position[1]] = "empty"
 
         frontier = [start.position]
         possible_neighbors = [(0, 2), (0, -2), (2, 0), (-2, 0)]
@@ -46,38 +46,33 @@ class Board():
             random_frontier = frontier[random.randint(0, len(frontier) - 1)]
             self.graph[random_frontier[0]][random_frontier[1]] = "empty"
             frontier.remove(random_frontier)
+
+            for neighbour in possible_neighbors:
+                if((random_frontier[0] + neighbour[0], random_frontier[1] + neighbour[1]) in frontier or
+                    random_frontier[0] + neighbour[0] < 1 or
+                    random_frontier[0] + neighbour[0] > self.rows - 2 or
+                    random_frontier[1] + neighbour[1] < 1 or
+                    random_frontier[1] + neighbour[1] > self.columns - 2):
+
+                    continue
+                
+                if self.graph[random_frontier[0] + neighbour[0]][random_frontier[1] + neighbour[1]] == "empty":
+                    self.graph[(random_frontier[0] + (random_frontier[0] + neighbour[0])) // 2][(random_frontier[1] + (random_frontier[1] + neighbour[1])) // 2] = "empty"
+                    break
             
             for neighbour in possible_neighbors:
-                if random_frontier == random_frontier == end.position:
-                    continue
-                if (random_frontier[0] + neighbour[0], random_frontier[1] + neighbour[1]) in frontier:
-                    continue
-                if random_frontier[0] + neighbour[0] < 1:
-                    continue
-                if random_frontier[0] + neighbour[0] > self.rows - 2:
-                    continue
-                if random_frontier[1] + neighbour[1] < 1:
-                    continue
-                if random_frontier[1] + neighbour[1] > self.columns - 2:
-                    continue
-                if self.graph[random_frontier[0] + neighbour[0]][random_frontier[1] + neighbour[1]] == "empty":
+                if((random_frontier[0] + neighbour[0], random_frontier[1] + neighbour[1]) in frontier or
+                    random_frontier[0] + neighbour[0] < 1 or
+                    random_frontier[0] + neighbour[0] > self.rows - 2 or
+                    random_frontier[1] + neighbour[1] < 1 or
+                    random_frontier[1] + neighbour[1] > self.columns - 2 or
+                    self.graph[random_frontier[0] + neighbour[0]][random_frontier[1] + neighbour[1]] == "empty"):
+
                     continue
                 
                 frontier.append((random_frontier[0] + neighbour[0], random_frontier[1] + neighbour[1]))
 
-            for neighbour in possible_neighbors:
-                if random_frontier[0] + neighbour[0] < 1:
-                    continue
-                if random_frontier[0] + neighbour[0] > self.rows - 2:
-                    continue
-                if random_frontier[1] + neighbour[1] < 1:
-                    continue
-                if random_frontier[1] + neighbour[1] > self.columns - 2:
-                    continue
-                if self.graph[random_frontier[0] + neighbour[0]][random_frontier[1] + neighbour[1]] == "empty":
-                    self.graph[(random_frontier[0] + (random_frontier[0] + neighbour[0])) // 2][(random_frontier[1] + (random_frontier[1] + neighbour[1])) // 2] = "empty"
-                    break
-
+    
     def draw_board(self, win):
         win.fill(WHITE)
         for row in range(self.rows):
@@ -295,14 +290,12 @@ def main():
                     start.position = (1, 1)
                     end.position = (board.rows - 2, board.columns - 2)
                     board.update(board.rows, board.columns)
-                    print(board.rows, board.columns)
                 elif event.button == 5 and board.rows < 50:
                     board.rows += 5
                     board.columns += 5
                     start.position = (1, 1)
                     end.position = (board.rows - 2, board.columns - 2)
                     board.update(board.rows, board.columns)
-                    print(board.rows, board.columns)
                 path = []
             if event.type == pygame.MOUSEBUTTONUP and buttons_list[1].isPressed:
                 buttons_list[1].isPressed = False
