@@ -9,7 +9,7 @@ class Board():
         self.rows = 20
         self.columns = 20
         self.width = WIDTH // self.columns
-        self.graph = [["empty" for col in range(self.columns)] for row in range(self.rows)]
+        self.graph = [["empty" for col in range(self.columns)] for row in range(self.rows)] # 2D list which represents the grid
 
     def update(self, rows, columns):
         self.rows = rows
@@ -24,61 +24,57 @@ class Board():
         self.graph[row][col] = "empty"
 
     def random_generation(self, start, end):
-        if start.position[0] == 0:
-            start.position = (start.position[0] + 1, start.position[1])
-        if start.position[1] == 0:
-            start.position = (start.position[0], start.position[1] + 1)
-        if start.position[0] == self.rows - 1:
-            start.position = (start.position[0] - 1, start.position[1])
-        if start.position == self.columns - 1:
-            start.position[1] = (start.position[0], start.position[1] - 1)
+        nodes = (start.position, end.position)
+        for position in nodes: # Making sure that both start and end node are within the grid
+            if position[0] == 0:
+                position = (position[0] + 1, position[1])
+            if position[1] == 0:
+                position = (position[0], position[1] + 1)
+            if position[0] == self.rows - 1:
+                position = (position[0] - 1, position[1])
+            if position[1] == self.columns - 1:
+                position[1] = (position[0], position[1] - 1)
         
-        for row in range(self.rows):
+        for row in range(self.rows): # Filling the grid up of walls
             for col in range(self.columns):
                 self.graph[row][col] = "wall"
 
-        self.graph[end.position[0]][end.position[1]] = "empty"
-
-        frontier = [start.position]
+        frontier = [start.position] # Frontier list
         possible_neighbors = [(0, 2), (0, -2), (2, 0), (-2, 0)]
 
-        while len(frontier) > 0:
-            random_frontier = frontier[random.randint(0, len(frontier) - 1)]
+        while len(frontier) > 0: # Prim's algorithm for maze generation
+            random_frontier = frontier[random.randint(0, len(frontier) - 1)] # Choosing a frontier randomly among the frontier list
             self.graph[random_frontier[0]][random_frontier[1]] = "empty"
             frontier.remove(random_frontier)
-            
+
             for neighbour in possible_neighbors:
-                if random_frontier == random_frontier == end.position:
+                if((random_frontier[0] + neighbour[0], random_frontier[1] + neighbour[1]) in frontier or
+                    random_frontier[0] + neighbour[0] < 1 or
+                    random_frontier[0] + neighbour[0] > self.rows - 2 or
+                    random_frontier[1] + neighbour[1] < 1 or
+                    random_frontier[1] + neighbour[1] > self.columns - 2):
+
                     continue
-                if (random_frontier[0] + neighbour[0], random_frontier[1] + neighbour[1]) in frontier:
-                    continue
-                if random_frontier[0] + neighbour[0] < 1:
-                    continue
-                if random_frontier[0] + neighbour[0] > self.rows - 2:
-                    continue
-                if random_frontier[1] + neighbour[1] < 1:
-                    continue
-                if random_frontier[1] + neighbour[1] > self.columns - 2:
-                    continue
+                
+                # Putting the cell between the chosen cell and another "empty" cell, if there is one, in state "empty"
                 if self.graph[random_frontier[0] + neighbour[0]][random_frontier[1] + neighbour[1]] == "empty":
+                    self.graph[(random_frontier[0] + (random_frontier[0] + neighbour[0])) // 2][(random_frontier[1] + (random_frontier[1] + neighbour[1])) // 2] = "empty"
+                    break
+            
+            for neighbour in possible_neighbors: # Computing every frontier of the chosen node
+                if((random_frontier[0] + neighbour[0], random_frontier[1] + neighbour[1]) in frontier or
+                    random_frontier[0] + neighbour[0] < 1 or
+                    random_frontier[0] + neighbour[0] > self.rows - 2 or
+                    random_frontier[1] + neighbour[1] < 1 or
+                    random_frontier[1] + neighbour[1] > self.columns - 2 or
+                    self.graph[random_frontier[0] + neighbour[0]][random_frontier[1] + neighbour[1]] == "empty"):
+
                     continue
                 
                 frontier.append((random_frontier[0] + neighbour[0], random_frontier[1] + neighbour[1]))
 
-            for neighbour in possible_neighbors:
-                if random_frontier[0] + neighbour[0] < 1:
-                    continue
-                if random_frontier[0] + neighbour[0] > self.rows - 2:
-                    continue
-                if random_frontier[1] + neighbour[1] < 1:
-                    continue
-                if random_frontier[1] + neighbour[1] > self.columns - 2:
-                    continue
-                if self.graph[random_frontier[0] + neighbour[0]][random_frontier[1] + neighbour[1]] == "empty":
-                    self.graph[(random_frontier[0] + (random_frontier[0] + neighbour[0])) // 2][(random_frontier[1] + (random_frontier[1] + neighbour[1])) // 2] = "empty"
-                    break
-
-    def draw_board(self, win):
+    
+    def draw_board(self, win): # Drawing the board including grids and walls
         win.fill(WHITE)
         for row in range(self.rows):
             pygame.draw.line(win, BLACK, (0, row * self.width), (WIDTH, row * self.width), 1)
@@ -129,26 +125,26 @@ class Node():
         self.parent = parent
         self.position = position
 
-        self.f = 0
-        self.g = 0
-        self.h = 0
+        self.f = 0 # f cost
+        self.g = 0 # g cost
+        self.h = 0 # h cost
 
     def __eq__(self, other):
         return self.position == other.position
 
-    def get_node_rect(self, width):
+    def get_node_rect(self, width): # Getting the Rect object of a node in the board
         return pygame.Rect(self.position[1] * width + 1, self.position[0] * width + 1, width - 1, width - 1)
 
     def draw(self, color, node_rect):
         pygame.draw.rect(win, color, node_rect)
 
 
-def draw_path(color, path, width):
+def draw_path(color, path, width): # Drawing the final path if found
     for node in path:
         node.draw(color, node.get_node_rect(width))
 
 
-def freeze(ms):
+def freeze(ms): # Freezing the program
     i = 0
     while i < ms:
         pygame.time.delay(10)
@@ -159,14 +155,14 @@ def freeze(ms):
                 pygame.quit()
 
 
-def heuristic(start, end, distance):
+def heuristic(start, end, distance): # Calculating the heuristic cost (h cost)
     if distance == "Manhattan":
         return abs(start[0] - end[0]) + abs(start[1] - end[1])
     if distance == "Euclidean":
         return math.sqrt(((start[0] - end[0]) ** 2) + ((start[1] - end[1]) ** 2))
 
 
-def return_path(current_node, node_width):
+def return_path(current_node, node_width): # Returns a list of every coordinates that forms the final path
     path = []
     current = current_node
     while current is not None:
@@ -178,16 +174,17 @@ def return_path(current_node, node_width):
     return path[1:-1]
 
 
-def a_star(graph, node_width, start, end, distance, allow_diagonal, allow_bidirectional):
+def a_star(graph, node_width, start, end, distance, allow_diagonal, allow_bidirectional): # A* algorithm
     open_list = []
     closed_list = []
 
     open_list.append(start)
 
     current_iteration = 0
-    max_iterations = (len(graph) // 2) ** 10
+    max_iterations = (len(graph) // 2) ** 10 # Set a max iteration in case the algorithm takes too long to find a path
     neighbors = set()
     
+    # All possible moves depending on the "allow_diagonal" variable
     if allow_diagonal:
         possible_moves = [(0, 1), (0, -1), (1, 0), (-1, 0), (1, 1), (-1, 1), (-1, -1), (1, -1)]
     else:
@@ -198,12 +195,12 @@ def a_star(graph, node_width, start, end, distance, allow_diagonal, allow_bidire
 
         current_node = open_list[0]
         current_index = 0
-        for index, node in enumerate(open_list):
+        for index, node in enumerate(open_list): # Finding the node with the lowest f cost
             if node.f < current_node.f:
                 current_node = node
                 current_index = index
 
-        node.draw(RED, current_node.get_node_rect(node_width))
+        current_node.draw(RED, current_node.get_node_rect(node_width)) # Draws it
 
         if current_iteration > max_iterations:
             return return_path(current_node, node_width)
@@ -211,38 +208,38 @@ def a_star(graph, node_width, start, end, distance, allow_diagonal, allow_bidire
         open_list.pop(current_index)
         closed_list.append(current_node)
 
-        if current_node == end:
+        if current_node == end: # The current node is the final destination, returning the final path
             return return_path(current_node, node_width)
 
-        children = []
+        children = [] # Lists containing every reachable neighbors nodes
 
-        for new_position in possible_moves:
+        for new_position in possible_moves: # Iterating through every possible moves
             node_position = (current_node.position[0] + new_position[0], current_node.position[1] + new_position[1])
-            if node_position in neighbors:
+            if node_position in neighbors: # Checking if the current neighbour has already been calculated in previous iterations
                 continue
             else:
                 neighbors.add(node_position)
 
-            if (node_position[0] > len(graph) -1 or
+            if (node_position[0] > len(graph) -1 or # Cheking if it's within the grid
                 node_position[0] < 0 or
                 node_position[1] > len(graph[len(graph) -1]) -1 or
                 node_position[1] < 0):
                 continue
 
-            if graph[node_position[0]][node_position[1]] != "empty":
+            if graph[node_position[0]][node_position[1]] != "empty": # Has to be a wall
                 continue
 
-            new_node = Node(current_node, node_position)
+            new_node = Node(current_node, node_position) # Creating a new Node object
             new_node.draw(LIME, new_node.get_node_rect(node_width))
             pygame.display.update()
             freeze(0.1)
 
             children.append(new_node)
 
-        for child in children:
+        for child in children: # Iterating through every reachable neighbors
             child.g = current_node.g + 1
             child.h = heuristic(child.position, end.position, distance)
-            child.f = child.g + child.h
+            child.f = child.g + child.h # Updating the cost of the path
 
             for open_node in open_list:
                 if open_node == child and child.g >= open_node.g:
@@ -295,14 +292,12 @@ def main():
                     start.position = (1, 1)
                     end.position = (board.rows - 2, board.columns - 2)
                     board.update(board.rows, board.columns)
-                    print(board.rows, board.columns)
                 elif event.button == 5 and board.rows < 50:
                     board.rows += 5
                     board.columns += 5
                     start.position = (1, 1)
                     end.position = (board.rows - 2, board.columns - 2)
                     board.update(board.rows, board.columns)
-                    print(board.rows, board.columns)
                 path = []
             if event.type == pygame.MOUSEBUTTONUP and buttons_list[1].isPressed:
                 buttons_list[1].isPressed = False
