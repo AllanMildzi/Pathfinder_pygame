@@ -1,5 +1,6 @@
 import pygame
 import math
+import random
 from settings import *
 
 
@@ -7,7 +8,7 @@ class Board():
     def __init__(self):
         self.rows = 20
         self.columns = 20
-        self.width = WIDTH / self.columns
+        self.width = WIDTH // self.columns
         self.graph = [["empty" for col in range(self.columns)] for row in range(self.rows)]
 
     def update(self, rows, columns):
@@ -22,8 +23,60 @@ class Board():
     def clear_walls(self, row, col):
         self.graph[row][col] = "empty"
 
-    def random_generation(self):
-        print("Coming soon...")
+    def random_generation(self, start, end):
+        if start.position[0] == 0:
+            start.position = (start.position[0] + 1, start.position[1])
+        if start.position[1] == 0:
+            start.position = (start.position[0], start.position[1] + 1)
+        if start.position[0] == self.rows - 1:
+            start.position = (start.position[0] - 1, start.position[1])
+        if start.position == self.columns - 1:
+            start.position[1] = (start.position[0], start.position[1] - 1)
+        
+        for row in range(self.rows):
+            for col in range(self.columns):
+                self.graph[row][col] = "wall"
+
+        self.graph[end.position[0]][end.position[1]] = "empty"
+
+        frontier = [start.position]
+        possible_neighbors = [(0, 2), (0, -2), (2, 0), (-2, 0)]
+
+        while len(frontier) > 0:
+            random_frontier = frontier[random.randint(0, len(frontier) - 1)]
+            self.graph[random_frontier[0]][random_frontier[1]] = "empty"
+            frontier.remove(random_frontier)
+            
+            for neighbour in possible_neighbors:
+                if random_frontier == random_frontier == end.position:
+                    continue
+                if (random_frontier[0] + neighbour[0], random_frontier[1] + neighbour[1]) in frontier:
+                    continue
+                if random_frontier[0] + neighbour[0] < 1:
+                    continue
+                if random_frontier[0] + neighbour[0] > self.rows - 2:
+                    continue
+                if random_frontier[1] + neighbour[1] < 1:
+                    continue
+                if random_frontier[1] + neighbour[1] > self.columns - 2:
+                    continue
+                if self.graph[random_frontier[0] + neighbour[0]][random_frontier[1] + neighbour[1]] == "empty":
+                    continue
+                
+                frontier.append((random_frontier[0] + neighbour[0], random_frontier[1] + neighbour[1]))
+
+            for neighbour in possible_neighbors:
+                if random_frontier[0] + neighbour[0] < 1:
+                    continue
+                if random_frontier[0] + neighbour[0] > self.rows - 2:
+                    continue
+                if random_frontier[1] + neighbour[1] < 1:
+                    continue
+                if random_frontier[1] + neighbour[1] > self.columns - 2:
+                    continue
+                if self.graph[random_frontier[0] + neighbour[0]][random_frontier[1] + neighbour[1]] == "empty":
+                    self.graph[(random_frontier[0] + (random_frontier[0] + neighbour[0])) // 2][(random_frontier[1] + (random_frontier[1] + neighbour[1])) // 2] = "empty"
+                    break
 
     def draw_board(self, win):
         win.fill(WHITE)
@@ -93,7 +146,6 @@ class Node():
 def draw_path(color, path, width):
     for node in path:
         node.draw(color, node.get_node_rect(width))
-        freeze(0.2)
 
 
 def freeze(ms):
@@ -114,11 +166,14 @@ def heuristic(start, end, distance):
         return math.sqrt(((start[0] - end[0]) ** 2) + ((start[1] - end[1]) ** 2))
 
 
-def return_path(current_node):
+def return_path(current_node, node_width):
     path = []
     current = current_node
     while current is not None:
         path.append(current)
+        current.draw(BLUE, current.get_node_rect(node_width))
+        pygame.display.update()
+        freeze(0.1)
         current = current.parent
     return path[1:-1]
 
@@ -151,13 +206,13 @@ def a_star(graph, node_width, start, end, distance, allow_diagonal, allow_bidire
         node.draw(RED, current_node.get_node_rect(node_width))
 
         if current_iteration > max_iterations:
-            return return_path(current_node)
+            return return_path(current_node, node_width)
 
         open_list.pop(current_index)
         closed_list.append(current_node)
 
         if current_node == end:
-            return return_path(current_node)
+            return return_path(current_node, node_width)
 
         children = []
 
@@ -232,19 +287,26 @@ def main():
             if event.type == pygame.QUIT:
                 run = False
             if event.type == pygame.MOUSEBUTTONDOWN:
+                if buttons_list[1].buttons_rect.collidepoint(pygame.mouse.get_pos()):
+                    board.random_generation(start, end)
                 if event.button == 4 and board.rows > 10:
-                    board.rows -= 1
-                    board.columns -= 1
+                    board.rows -= 5
+                    board.columns -= 5
                     start.position = (1, 1)
                     end.position = (board.rows - 2, board.columns - 2)
                     board.update(board.rows, board.columns)
-                elif event.button == 5 and board.rows < 40:
-                    board.rows += 1
-                    board.columns += 1
+                    print(board.rows, board.columns)
+                elif event.button == 5 and board.rows < 50:
+                    board.rows += 5
+                    board.columns += 5
                     start.position = (1, 1)
                     end.position = (board.rows - 2, board.columns - 2)
                     board.update(board.rows, board.columns)
+                    print(board.rows, board.columns)
                 path = []
+            if event.type == pygame.MOUSEBUTTONUP and buttons_list[1].isPressed:
+                buttons_list[1].isPressed = False
+            
             for button in buttons_list:
                 if event.type == pygame.MOUSEBUTTONDOWN and button.buttons_rect.collidepoint(pygame.mouse.get_pos()):
                     if button.isPressed == False:
@@ -315,9 +377,6 @@ def main():
                     elif buttons_list[0].buttons_rect.collidepoint(pygame.mouse.get_pos()):
                         board.clear_walls(row, col)
                         buttons_list[0].isPressed = False
-                    elif buttons_list[1].buttons_rect.collidepoint(pygame.mouse.get_pos()):
-                        board.random_generation()
-                        buttons_list[1].isPressed = False
                     elif buttons_list[2].buttons_rect.collidepoint(pygame.mouse.get_pos()):
                         if algorithm == "A*":
                             draw_path(WHITE, path, board.width)
@@ -330,7 +389,7 @@ def main():
                                           option_boxes[1].is_checked)
                         
                         elif algorithm == "Dijkstra":
-                            print("Test")
+                            print("Coming soon...")
                         buttons_list[2].isPressed = False
                         break
                 else:
