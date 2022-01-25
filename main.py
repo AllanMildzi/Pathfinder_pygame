@@ -174,7 +174,7 @@ def return_path(current_node, node_width): # Returns a list of every coordinates
     return path[1:-1]
 
 
-def a_star(graph, node_width, start, end, distance, allow_diagonal, allow_bidirectional): # A* algorithm
+def a_star(graph, node_width, start, end, distance, allow_diagonal): # A* algorithm
     open_list = []
     closed_list = []
 
@@ -226,7 +226,7 @@ def a_star(graph, node_width, start, end, distance, allow_diagonal, allow_bidire
                 node_position[1] < 0):
                 continue
 
-            if graph[node_position[0]][node_position[1]] != "empty": # Has to be a wall
+            if graph[node_position[0]][node_position[1]] != "empty": # Has to be an empty node
                 continue
 
             new_node = Node(current_node, node_position) # Creating a new Node object
@@ -256,12 +256,9 @@ def main():
     board = Board()
     buttons_list = [Button(0, "Clear"), Button(WIDTH / 3, "Random"), Button(WIDTH / 3 * 2, "Generate")]
     
-    algo_boxes = [CheckBox(20, HEIGTH - 140, "A*"), 
-                  CheckBox(20, HEIGTH - 105, "Dijkstra"),
-                  CheckBox(20, HEIGTH - 70, "Best-First-Search"),
-                  CheckBox(20, HEIGTH - 35, "Breadth-First-Search")]
+    algo_boxes = [CheckBox(20, HEIGTH - 120, "A*"), CheckBox(20, HEIGTH - 60, "Dijkstra")]
     
-    option_boxes = [CheckBox(300, HEIGTH - 120, "Diagonal"), CheckBox(300, HEIGTH - 60, "Bi-directional")]
+    option_boxes = [CheckBox(300, HEIGTH - 120, "Diagonal")]
     heuristic_boxes = [CheckBox(500, HEIGTH - 120, "Manhattan"), CheckBox(500, HEIGTH - 60, "Euclidean")]
     
     algo_boxes[0].is_checked = True
@@ -272,6 +269,7 @@ def main():
     start = Node(None, (1, 1))
     end = Node(None, (board.rows - 2, board.columns - 2))
     path = []
+    
     can_move_start = False
     can_move_end = False
     can_place_walls = False
@@ -345,7 +343,7 @@ def main():
         for option_box in option_boxes:
             option_box.draw()
         
-        if algorithm == "A*" or algorithm == "Best-First-Search":
+        if algorithm == "A*":
             for heuristic_box in heuristic_boxes:
                 heuristic_box.draw()
                 if heuristic_box.is_checked:
@@ -380,8 +378,7 @@ def main():
                                           start,
                                           end,
                                           heuristic,
-                                          option_boxes[0].is_checked,
-                                          option_boxes[1].is_checked)
+                                          option_boxes[0].is_checked)
                         
                         elif algorithm == "Dijkstra":
                             print("Coming soon...")
