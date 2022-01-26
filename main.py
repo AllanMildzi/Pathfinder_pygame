@@ -32,7 +32,7 @@ class Board():
                 position = (position[0], position[1] + 1)
             if position[0] == self.rows - 1:
                 position = (position[0] - 1, position[1])
-            if position[1] == self.columns - 1:
+            if position == self.columns - 1:
                 position[1] = (position[0], position[1] - 1)
         
         for row in range(self.rows): # Filling the grid up of walls
@@ -56,7 +56,7 @@ class Board():
 
                     continue
                 
-                # Putting the cell between the chosen cell and another "empty" cell, if there is one, in state "empty"
+                # Putting the cell between the chosen cell and another "empty" cell in state "empty"
                 if self.graph[random_frontier[0] + neighbour[0]][random_frontier[1] + neighbour[1]] == "empty":
                     self.graph[(random_frontier[0] + (random_frontier[0] + neighbour[0])) // 2][(random_frontier[1] + (random_frontier[1] + neighbour[1])) // 2] = "empty"
                     break
