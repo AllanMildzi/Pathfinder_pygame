@@ -220,7 +220,7 @@ def a_star(graph, node_width, start, end, distance, allow_diagonal, allow_bidire
             else:
                 neighbors.add(node_position)
 
-            if (node_position[0] > len(graph) -1 or # Cheking if it's within the grid
+            if (node_position[0] > len(graph) -1 or # Checking if it's within the grid
                 node_position[0] < 0 or
                 node_position[1] > len(graph[len(graph) -1]) -1 or
                 node_position[1] < 0):
