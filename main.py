@@ -32,12 +32,13 @@ class Board():
                 position = (position[0], position[1] + 1)
             if position[0] == self.rows - 1:
                 position = (position[0] - 1, position[1])
-            if position == self.columns - 1:
-                position[1] = (position[0], position[1] - 1)
+            if position[1] == self.columns - 1:
+                position = (position[0], position[1] - 1)
         
         for row in range(self.rows): # Filling the grid up of walls
             for col in range(self.columns):
                 self.graph[row][col] = "wall"
+        self.graph[end.position[0]][end.position[1]] = "empty"
 
         frontier = [start.position] # Frontier list
         possible_neighbors = [(0, 2), (0, -2), (2, 0), (-2, 0)]
