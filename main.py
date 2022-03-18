@@ -144,6 +144,16 @@ def draw_path(color, path, width): # Drawing the final path if found
     for node in path:
         node.draw(color, node.get_node_rect(width))
 
+def is_within_grid(graph, position): # Cheking if the node is within the grid
+    if (position[0] > len(graph) -1 or
+        position[0] < 0 or
+        position[1] > len(graph[len(graph) -1]) -1 or
+        position[1] < 0):
+
+        return 0
+
+    return 1
+
 
 def freeze(ms): # Freezing the program
     i = 0
@@ -184,12 +194,13 @@ def a_star(graph, node_width, start, end, distance, allow_diagonal): # A* algori
     current_iteration = 0
     max_iterations = (len(graph) // 2) ** 10 # Set a max iteration in case the algorithm takes too long to find a path
     neighbors = set()
+
+    possible_moves = [(0, 1), (1, 0), (0, -1), (-1, 0)]
+    diagonal_moves = []
     
     # All possible moves depending on the "allow_diagonal" variable
     if allow_diagonal:
-        possible_moves = [(0, 1), (0, -1), (1, 0), (-1, 0), (1, 1), (-1, 1), (-1, -1), (1, -1)]
-    else:
-        possible_moves = [(0, 1), (0, -1), (1, 0), (-1, 0)]
+        diagonal_moves = [(1, 1), (-1, 1), (-1, -1), (1, -1)]
 
     while len(open_list) > 0:
         current_iteration += 1
@@ -214,21 +225,28 @@ def a_star(graph, node_width, start, end, distance, allow_diagonal): # A* algori
 
         children = [] # Lists containing every reachable neighbors nodes
 
-        for new_position in possible_moves: # Iterating through every possible moves
+        for new_position in possible_moves + diagonal_moves: # Iterating through every possible moves
             node_position = (current_node.position[0] + new_position[0], current_node.position[1] + new_position[1])
             if node_position in neighbors: # Checking if the current neighbour has already been calculated in previous iterations
                 continue
             else:
                 neighbors.add(node_position)
 
-            if (node_position[0] > len(graph) -1 or # Checking if it's within the grid
-                node_position[0] < 0 or
-                node_position[1] > len(graph[len(graph) -1]) -1 or
-                node_position[1] < 0):
+            if is_within_grid(graph, node_position) == 0:
                 continue
 
             if graph[node_position[0]][node_position[1]] != "empty": # Has to be an empty node
                 continue
+            
+            if new_position in diagonal_moves: # Prevention for the corner cut problem
+                counter = 0
+                for straight_move in possible_moves:
+                    if is_within_grid(graph, (node_position[0] + straight_move[0], node_position[1] + straight_move[1])) == 0:
+                        continue
+                    if graph[node_position[0]+straight_move[0]][node_position[1]+straight_move[1]] != "empty":
+                        counter += 1
+                if counter > 1:
+                    continue
 
             new_node = Node(current_node, node_position) # Creating a new Node object
             new_node.draw(LIME, new_node.get_node_rect(node_width))
