@@ -15,19 +15,19 @@ class Board:
         self.diagonal = self.checkboxes[2].is_checked
         self.distance = self.checkboxes[3].text
 
-    def set_search_options(self, selected, *others):
+    def set_search_options(self, selected, *others): # Sets the search options
         selected.is_checked = True
         for checkbox in others:
             checkbox.is_checked = False
 
-    def create_board(self):
+    def create_board(self): # Creates 2D list which represents the board
         board = [[Node(self, (row, col)) for col in range(self.columns)] for row in range(self.rows)]
         board[1][1].node_type = "start"
         board[self.rows-2][self.columns-2].node_type = "end"
 
         return board
 
-    def init_board(self, rows):
+    def init_board(self, rows): # Resets the class attibutes when changing the size of the grid
         self.rows = self.columns = rows
         self.node_width = self.node_height = WIDTH / self.rows
         self.board = self.create_board()
@@ -36,7 +36,7 @@ class Board:
         self.end = self.board[self.rows-2][self.columns-2]
         self.move_start = self.move_end = False
 
-    def draw(self, surface, freeze=False, only_board=False):
+    def draw(self, surface, freeze=False, only_board=False): # Draws the board
         for nodes in self.board:
             for node in nodes:
                 node.draw(self, surface)
@@ -58,7 +58,7 @@ class Board:
         if freeze:
             pygame.time.wait(2)
 
-    def user_input(self):        
+    def user_input(self): # Gets user input
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -135,7 +135,7 @@ class Board:
         if distance == "Euclidean":
             return math.sqrt(((start.x - end.x) ** 2) + ((start.y - end.y) ** 2))
 
-    def reconstruct_path(self, current_node):
+    def reconstruct_path(self, current_node): # Reconstruct the shortest path between the two nodes
         path = []
         current = current_node
         while current:
@@ -149,7 +149,7 @@ class Board:
 
         return path
 
-    def shortest_path(self, algo, distance, allow_diagonal):
+    def shortest_path(self, algo, distance, allow_diagonal): # Finds the shortest using A* or Dijkstra algorighm
         open_list = [self.start]    
         closed_list = []
         
@@ -158,10 +158,9 @@ class Board:
             self.start.f = self.start.h
 
         possible_moves = [(0, 1), (1, 0), (0, -1), (-1, 0)]
-        diagonal_moves = []
     
-        if allow_diagonal:
-            diagonal_moves = [(1, 1), (-1, 1), (-1, -1), (1, -1)]
+        if allow_diagonal: # Adding optional moves depending on the value of "allow_diagonal"
+            possible_moves.extend([(1, 1), (-1, 1), (-1, -1), (1, -1)])
 
         while open_list:
             current_node = open_list[0]
@@ -169,7 +168,7 @@ class Board:
                 if node.f < current_node.f:
                     current_node = node
             
-            if current_node == self.end:
+            if current_node == self.end: # End condition
                 return self.reconstruct_path(current_node)
 
             current_node.set_type("current")
@@ -178,7 +177,7 @@ class Board:
             open_list.remove(current_node)
             closed_list.append(current_node)
 
-            for pos in possible_moves + diagonal_moves:
+            for pos in possible_moves: # Lopping through every possible neighbour
                 neighbour_pos = pygame.math.Vector2(current_node.position.x + pos[0], current_node.position.y + pos[1])
                 if neighbour_pos.x not in set(range(0, self.columns)) or neighbour_pos.y not in set(range(0, self.rows)):
                     continue
@@ -228,11 +227,11 @@ class Node:
         self.image = pygame.Surface((board.node_width, board.node_height))
         self.rect = self.image.get_rect(topleft=(self.position.x * board.node_height, self.position.y * board.node_width))
 
-    def set_type(self, node_type):
+    def set_type(self, node_type): # Sets the type of the node
         if self.node_type != "start":
             self.node_type = node_type
 
-    def draw(self, board, surface):
+    def draw(self, board, surface): # Draws the node
         self.image.fill(NODE_COLOR[self.node_type])
         surface.blit(self.image, (self.position.x * board.node_height, self.position.y * board.node_width))
 
@@ -245,11 +244,12 @@ class Button:
         self.font = pygame.font.SysFont("arial", 20, True, True)
         self.text = self.font.render(text, 1, BLACK)
 
-    def draw(self, surface):
+    def draw(self, surface): # Draws the button
         self.image.fill(CERISE)        
         pygame.draw.rect(self.image, BLACK, (0, 0, WIDTH // 2, 50), 1)
         self.image.blit(self.text, (0, 0))
         surface.blit(self.image, self.rect)
+
 
 class CheckBox:
     def __init__(self, text, pos, is_checked=False):
@@ -261,7 +261,7 @@ class CheckBox:
         self.message = self.font.render(text, 1, BLACK)
         self.is_checked = is_checked
 
-    def draw(self, surface):
+    def draw(self, surface): # Draws the checkbox
         if self.is_checked:
             self.image.fill(BLACK)
         else:
@@ -271,13 +271,14 @@ class CheckBox:
         surface.blit(self.message, (self.rect.right + 10, self.rect.top + 5))
         surface.blit(self.image, self.rect)
 
+
 class Game:
     def __init__(self):
         pygame.init()
         self.win = pygame.display.set_mode((WIDTH, HEIGHT))
         self.board = Board()
 
-    def run(self):
+    def run(self): # Main game loop
         while True:
             self.board.user_input()
             
